@@ -189,7 +189,9 @@ def main():
         law_to_files[name].append(f)
     
     # If law_names.txt exists, use it to ensure we hit deleted laws
-    names_file = "/Users/bo/workspace/telegram-mongo/law_names.txt"
+    # If law_names.txt exists in the same directory, use it
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    names_file = os.path.join(script_dir, "law_names.txt")
     if os.path.exists(names_file):
         with open(names_file, 'r', encoding='utf-8') as f:
             sorted_names = [line.strip() for line in f if line.strip()]

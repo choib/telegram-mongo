@@ -25,7 +25,7 @@ telegram-mongo/
 │   └── ...
 ├── app.py              # Main bot entry point
 ├── rag.py              # RAG management CLI
-└── update_laws.py      # Law update engine
+└── scripts/update_laws.py # Law update engine
 ```
 
 ## 🛠️ Management CLI
@@ -40,7 +40,7 @@ python3 rag.py --test "헌법이란?"  # Test retrieval
 ### Law Repository Update
 Fetch latest laws from the official API:
 ```bash
-python3 update_laws.py            # Update all laws in law_names.txt
+python3 scripts/update_laws.py   # Update all laws in scripts/law_names.txt
 ```
 
 ## 🚀 Deployment

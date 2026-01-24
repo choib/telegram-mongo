@@ -23,9 +23,9 @@ telegram-mongo/
 │   ├── agentic_handlers.py # AI 추론 흐름 제어
 │   ├── context_aware_splitter.py # 법률 특화 텍스트 분할기
 │   └── ...
-├── app.py              # 메인 봇 실행 진입점
-├── rag.py              # RAG 관리용 CLI
-└── update_laws.py      # 법률 업데이트 엔진
+├── app.py              # 메인 봇 실행 파일
+├── rag.py              # RAG 관리 CLI
+└── scripts/update_laws.py # 법령 업데이트 엔진
 ```
 
 ## 🛠️ 관리용 CLI
@@ -37,10 +37,10 @@ python3 rag.py --rebuild          # 데이터베이스 강제 재생성
 python3 rag.py --test "헌법이란?"  # 검색 테스트 실행
 ```
 
-### 법률 저장소 업데이트
-공식 API에서 최신 법률을 가져옵니다.
+### 법령 저장소 업데이트
+공식 API에서 최신 법령을 가져옵니다:
 ```bash
-python3 update_laws.py            # law_names.txt에 명시된 모든 법률 업데이트
+python3 scripts/update_laws.py   # scripts/law_names.txt에 명시된 모든 법령 업데이트
 ```
 
 ## 🚀 배포 및 설정
