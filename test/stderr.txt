@@ -1,0 +1,12 @@
+2025-12-16 23:34:57,661 - INFO - Testing RAG pipeline...
+2025-12-16 23:34:57,661 - INFO - Existing vector store found, loading it...
+2025-12-16 23:34:59,195 - INFO - Load pretrained SentenceTransformer: /Users/bo/workspace/KR-SBERT-V40K-klueNLI-augSTS
+2025-12-16 23:34:59,949 - INFO - Use pytorch device: cpu
+2025-12-16 23:34:59,949 - INFO - Loading existing vector store from /Users/bo/workspace/korean_law/db_split
+2025-12-16 23:35:00,002 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+/opt/homebrew/lib/python3.11/site-packages/google/rpc/__init__.py:18: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
+2025-12-16 23:35:00,165 - INFO - Vector store loaded successfully
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  4.82it/s]Batches: 100%|██████████| 1/1 [00:00<00:00,  4.81it/s]
+2025-12-16 23:35:00,405 - INFO - Test query '전세권 설정 우선순위' returned 0 results
+2025-12-16 23:35:00,405 - INFO - RAG pipeline test completed successfully

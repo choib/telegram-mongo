@@ -1,0 +1,30 @@
+"""
+Test to understand Telegram MarkdownV2 escaping requirements
+"""
+
+# Test text with existing markdown
+test_text = "This is **bold** and *italic* text with `code` and a URL like https://example.com"
+
+print("Original text:")
+print(test_text)
+print("\n" + "=" * 80)
+
+# According to Telegram MarkdownV2 docs:
+# - _ * [ ] ( ) ~ ` > # + - = | { } . !
+# These need to be escaped when they are LITERAL characters, not when used for formatting
+
+# So if we have: "This is **bold** text"
+# The ** are formatting markers, so they should NOT be escaped
+# But if we have: "This is *literal asterisk* text", the * should be escaped
+
+# The correct approach:
+# 1. First, escape ALL special characters
+# 2. Then, add our markdown formatting (which will use unescaped * ** ` etc.)
+# 3. The result will have our intentional markdown plus escaped literals
+
+print("\nTelegram MarkdownV2 requires escaping special characters that are LITERAL,")
+print("not those used for formatting.")
+print("\nSo the order should be:")
+print("1. Escape all special characters")
+print("2. Add markdown formatting (which will use unescaped markers)")
+print("3. Result: intentional markdown + escaped literals")

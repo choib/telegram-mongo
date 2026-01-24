@@ -1,0 +1,78 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.env
+.venv/
+venv/
+ENV/
+env.bak
+venv-bak/
+venvtest/
+env.test.local/
+pip-bucket/
+pipdownloadcache/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Database
+*.sqlite3
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Virtual environment
+bin/
+include/
+lib/
+share/
+pyvenv.cfg
+
+# Test coverage
+.htmlcov/
+.tox/
+.coverages/
+*.cover
+*.py,cover
+.html
+.htmlcov
+.pep8
+.pytest_cache/
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Misc
+*.bak
+*.tmp
+*.orig
+
+# Project Specific
+db/
+data/
+scripts/fetch_requested_laws.py
+update_laws.log

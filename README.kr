@@ -1,0 +1,84 @@
+# ⚖️ 한국법 전문가 봇 (Korean Law Expert Bot)
+
+본 프로젝트는 에이전트 기반 아키텍처와 RAG(Retrieval-Augmented Generation, 검색 증강 생성) 기술을 활용하여 한국 법률 및 법적 문서에 대한 전문가 수준의 지원을 제공하는 특화된 텔레그램 봇입니다.
+
+## 🚀 주요 기능
+
+- **에이전트 기반 법률 추론**: 사용자 질의를 분석하고 로컬 RAG 검색 또는 실시간 웹 검색이 필요한지 여부를 판단하는 멀티 에이전트 시스템입니다.
+- **고정밀 RAG 파이프라인**: 200개 이상의 엄선된 한국 법률 파일 코퍼스에 특화된 검색 기능을 제공합니다.
+- **문맥 인식 처리**: 정확한 검색을 위해 법적 계층 구조(조, 항)를 유지하는 지능형 문서 분할 기술을 사용합니다.
+- **자동 법률 업데이트**: 국가법령정보센터(`law.go.kr`)에서 최신 개정 사항을 가져오는 CLI 도구를 포함합니다.
+- **신뢰도 점수 산출**: 답변의 품질과 관련성을 보장하기 위해 자체 검증 및 신뢰 점수 모델이 내장되어 있습니다.
+
+## 📂 프로젝트 구조
+
+```bash
+telegram-mongo/
+├── config/             # 환경별 설정 파일
+├── data/               # 소스 데이터 (PDF/텍스트)
+├── db/                 # 벡터 저장소 (Chroma)
+├── docs/               # 세부 기술 문서
+├── scripts/            # 개발 및 유지보수용 유틸리티
+├── src/                # 핵심 애플리케이션 로직
+│   ├── agentic_handlers.py # AI 추론 흐름 제어
+│   ├── context_aware_splitter.py # 법률 특화 텍스트 분할기
+│   └── ...
+├── app.py              # 메인 봇 실행 진입점
+├── rag.py              # RAG 관리용 CLI
+└── update_laws.py      # 법률 업데이트 엔진
+```
+
+## 🛠️ 관리용 CLI
+
+### RAG 데이터베이스 관리
+벡터 저장소를 직접 재생성하거나 테스트할 수 있습니다.
+```bash
+python3 rag.py --rebuild          # 데이터베이스 강제 재생성
+python3 rag.py --test "헌법이란?"  # 검색 테스트 실행
+```
+
+### 법률 저장소 업데이트
+공식 API에서 최신 법률을 가져옵니다.
+```bash
+python3 update_laws.py            # law_names.txt에 명시된 모든 법률 업데이트
+```
+
+## 🚀 배포 및 설정
+
+### 사전 요구 사항
+- Python 3.11+
+- [Ollama](https://ollama.ai/) 또는 Gemini API 키
+- [Tavily API 키](https://tavily.com/) (웹 검색용)
+
+#### 🤖 텔레그램 봇 설정하기
+1. 텔레그램에서 **@BotFather**를 검색합니다.
+2. `/newbot` 명령어를 전송하고 안내에 따라 봇을 생성합니다.
+3. 제공된 **API Token**을 복사하여 `.env` 파일의 `TELEGRAM_BOT_TOKEN` 항목에 입력합니다.
+
+#### 🍃 MongoDB 설정하기
+본 봇은 대화 내역 저장을 위해 MongoDB가 필요합니다.
+- **로컬 설치**: MongoDB Community Edition을 설치하고 `localhost:27017`에서 실행 중인지 확인합니다.
+- **클라우드 설정**: [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)를 사용할 수 있습니다.
+- 설정값에 맞춰 `.env` 파일의 `MONGO_HOST` 및 `MONGO_PORT`를 업데이트합니다.
+
+### 설치 및 실행
+1. 저장소를 클론하고 의존성 패키지를 설치합니다.
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. `.env.example` 파일을 참고하여 `.env` 파일을 구성합니다.
+3. 데이터베이스를 초기화합니다.
+   ```bash
+   python3 rag.py --rebuild
+   ```
+4. 봇을 시작합니다.
+   ```bash
+   python3 app.py
+   ```
+
+## 📚 기술 문서
+아키텍처, 기능 구현, 마이그레이션 전략에 대한 자세한 가이드는 `docs/` 디렉토리에서 확인하실 수 있습니다.
+
+---
+**상태**: 배포 가능 ✅
+**최종 업데이트**: 2026년 1월
