@@ -4,6 +4,7 @@ This module provides handlers that use the agentic architecture.
 """
 
 import logging
+from typing import List, Dict, Any
 from telegram import Update
 from telegram.ext import ContextTypes
 from telegram.constants import ChatAction
@@ -137,6 +138,48 @@ def format_response_with_markdown(text: str) -> str:
 
     return text
 
+
+def split_message(text: str, max_part_len: int = 4090) -> List[str]:
+    """
+    Split a long message into multiple parts for Telegram, 
+    ensuring each part is valid MarkdownV2 if possible.
+    
+    This is a simpler approach that splits by paragraphs/sections 
+    and tries to keep markdown entities balanced.
+    """
+    if len(text) <= max_part_len:
+        return [text]
+        
+    parts = []
+    current_part = ""
+    
+    # Split by double newlines to preserve paragraphs
+    lines = text.split('\n')
+    
+    for line in lines:
+        if len(current_part) + len(line) + 1 > max_part_len:
+            if current_part:
+                parts.append(current_part.strip())
+                current_part = line + '\n'
+            else:
+                # Singular line is too long, split it forcefully
+                while len(line) > max_part_len:
+                    parts.append(line[:max_part_len])
+                    line = line[max_part_len:]
+                current_part = line + '\n'
+        else:
+            current_part += line + '\n'
+            
+    if current_part:
+        parts.append(current_part.strip())
+        
+    # Final safety check: Close any open markdown tags in each part
+    # (Simplified: just use safe_truncate logic to fix each part)
+    final_parts = []
+    for part in parts:
+        final_parts.append(safe_truncate(part, max_part_len, suffix=""))
+        
+    return final_parts
 
 def safe_truncate(text: str, max_len: int, suffix: str = "\\.\\.\\. \\[truncated\\]") -> str:
     """
@@ -364,62 +407,52 @@ async def agentic_text_chat_handler(update: Update, context: ContextTypes.DEFAUL
         # Prepare messages for history
         from langchain_core.messages import HumanMessage, AIMessage
         
-        # Check if confidence is below threshold OR if supplement questions were generated
+        # Build full unformatted message
+        full_raw_msg = reply_msg if reply_msg else ""
+        
         if confidence_score < config.CONFIDENCE_THRESHOLD or supplement_questions:
             logger.info(f"Low confidence ({confidence_score}%) or supplement questions generated")
             
             # If supplement questions were generated from quality check, use those
-            if supplement_questions:
-                logger.info(f"Using supplement questions from quality check: {supplement_questions}")
-            else:
-                # Generate supplement questions only if confidence is low
-                if confidence_score < config.CONFIDENCE_THRESHOLD:
-                    confidence_assessment_data = {"confidence_score": confidence_score, "reasoning": confidence_reasoning}
-                    supplement_questions = await judging_agent.generate_supplement_questions(
-                        query=text,
-                        answer=reply_msg,
-                        confidence_assessment=confidence_assessment_data
-                    )
+            if not supplement_questions and confidence_score < config.CONFIDENCE_THRESHOLD:
+                # Generate supplement questions only if confidence is low and not already generated
+                confidence_assessment_data = {"confidence_score": confidence_score, "reasoning": confidence_reasoning}
+                supplement_questions = await judging_agent.generate_supplement_questions(
+                    query=text,
+                    answer=reply_msg,
+                    confidence_assessment=confidence_assessment_data
+                )
             
             # Format supplement questions message
             questions_text = "\n\n".join([f"{i+1}. {q}" for i, q in enumerate(supplement_questions)])
-            
-            # Build full unformatted message
-            # Localization: We keep the numbers and formatting, but prefix with the warning
             warning_text = f"{config.UI['low_confidence_warning']} ({confidence_score}%)\.\n\n{config.UI['support_msg']}\n\n{questions_text}"
             
-            # Safety truncation for the answer part if the whole message is too long
-            # Leave about 600 chars for the warning/questions and formatting overhead
-            MAX_RAW_CHARS = 3500
-            display_reply = reply_msg if reply_msg else ""
-            
-            if display_reply and len(display_reply) + len(warning_text) > MAX_RAW_CHARS:
-                allowed_reply_len = MAX_RAW_CHARS - len(warning_text) - 50
-                display_reply = display_reply[:allowed_reply_len] + "... (truncated due to length)"
-            
-            full_raw_msg = (display_reply + "\n\n" + warning_text) if display_reply else warning_text
-            
-            # Format the entire message with MarkdownV2
-            formatted_msg = format_response_with_markdown(full_raw_msg)
-            
-            # Final check on formatted length (Telegram limit is 4096)
-            formatted_msg = safe_truncate(formatted_msg, 4090, "\\.\\.\\. \\[message truncated\\]")
-            
-            logger.info(f"Response sent with supplement questions")
-        else:
-            # Format response with Markdown
-            formatted_msg = format_response_with_markdown(reply_msg)
-            
-            # Final check on formatted length
-            formatted_msg = safe_truncate(formatted_msg, 4090, "\\.\\.\\. \\[message truncated\\]")
+            if full_raw_msg:
+                full_raw_msg += "\n\n" + warning_text
+            else:
+                full_raw_msg = warning_text
         
-        # Edit the thinking message with the actual response
+        # Format the entire message with MarkdownV2
+        formatted_msg = format_response_with_markdown(full_raw_msg)
+        
+        # Split message into multiples if it exceeds Telegram limits
+        msg_parts = split_message(formatted_msg)
+        
+        # Edit the thinking message with the first part
         await context.bot.edit_message_text(
-            text=formatted_msg,
+            text=msg_parts[0],
             chat_id=update.effective_chat.id,
             message_id=thinking_msg.id,
             parse_mode=ParseMode.MARKDOWN_V2,
         )
+        
+        # Send remaining parts as new messages
+        for part in msg_parts[1:]:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=part,
+                parse_mode=ParseMode.MARKDOWN_V2,
+            )
 
         # ALWAYS Store the conversation in history 
         new_messages = [

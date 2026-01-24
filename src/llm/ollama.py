@@ -165,6 +165,7 @@ class OllamaClient(BaseLLMClient):
                 json={
                     "model": self.model,
                     "prompt": prompt,
+                    "options": {"num_predict": 8192},
                 },
                 timeout=self.timeout,
             )
@@ -225,6 +226,7 @@ class OllamaClient(BaseLLMClient):
             request_data = {
                 "model": self.model,
                 "messages": messages,
+                "options": {"num_predict": 8192},
             }
             
             response = await client.post(
@@ -279,6 +281,7 @@ class OllamaClient(BaseLLMClient):
             json={
                 "model": self.model,
                 "prompt": prompt,
+                "options": {"num_predict": 8192},
             },
             timeout=self.timeout,
         ) as response:

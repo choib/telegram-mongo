@@ -188,7 +188,7 @@ class JudgingAgent:
             """
             
             extraction = ""
-            async with asyncio.timeout(60):
+            async with asyncio.timeout(120):
                 async for chunk in agent_config.llm_client.chat_stream(prompt):
                     extraction += chunk
             
@@ -233,7 +233,7 @@ class JudgingAgent:
             augmented_query = ""
             import asyncio
             try:
-                async with asyncio.timeout(90):
+                async with asyncio.timeout(180):
                     async for chunk in agent_config.llm_client.chat_stream(augmentation_prompt):
                         augmented_query += chunk
             except asyncio.TimeoutError:
@@ -276,7 +276,7 @@ class JudgingAgent:
             
             analyzed_query = ""
             try:
-                async with asyncio.timeout(90): # Use 90s for analysis
+                async with asyncio.timeout(180): # Use 180s for analysis
                     async for chunk in agent_config.llm_client.chat_stream(prompt):
                         analyzed_query += chunk
             except asyncio.TimeoutError:
@@ -346,7 +346,7 @@ class JudgingAgent:
             
             import asyncio
             try:
-                async with asyncio.timeout(30):
+                async with asyncio.timeout(60):
                     response = await agent_config.llm_client.chat([
                         {"role": "system", "content": "You are a quality judge for query augmentation. Be strict but fair."},
                         {"role": "user", "content": prompt}
@@ -401,7 +401,7 @@ Example: ["Could you clarify a specific detail?", "Are you asking about a partic
             
             import asyncio
             try:
-                async with asyncio.timeout(90):
+                async with asyncio.timeout(180):
                     response = await agent_config.llm_client.chat([
                         {"role": "system", "content": f"You are a helpful {config.ROLE}. Provide specific follow-up questions in a JSON list format."},
                         {"role": "user", "content": prompt}
@@ -455,7 +455,7 @@ FORMAT YOUR RESPONSE USING MARKDOWN:
         chunk_count = 0
         import asyncio
         try:
-            async with asyncio.timeout(90): # Use 90s for combining
+            async with asyncio.timeout(300): # Use 300s for combining
                 async for chunk in agent_config.llm_client.chat_stream(prompt):
                     response += chunk
                     chunk_count += 1
