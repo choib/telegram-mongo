@@ -74,5 +74,5 @@ npm-debug.log*
 # Project Specific
 db/
 data/
-scripts/fetch_requested_laws.py
 update_laws.log
+embed_model/
