@@ -145,12 +145,20 @@ def update_law(law_name, old_filenames):
     
     if content and len(content) >= 200:
         # Success!
-        # 1. Delete ALL old files for this exact law name
-        # We look for files starting with law_name followed by whitespace, (, or [
-        escaped_name = re.escape(law_name)
-        pattern = re.compile(rf"^{escaped_name}(\s+|\[|\()", re.IGNORECASE)
+        # 1. Delete old files for this EXACT lsi_seq
+        # We look for files containing (lsi_seq) to avoid clashing with laws of the same name
         for f in os.listdir(SOURCE_DIR):
-            if pattern.match(f) or f == f"{law_name}.txt":
+            if f"({lsi_seq})" in f:
+                old_path = os.path.join(SOURCE_DIR, f)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+        
+        # (Transition) Also delete files matching the old pattern: LawName(Date).txt
+        # to ensure we don't end up with duplicates during the naming convention change.
+        escaped_name = re.escape(law_name)
+        old_pattern = re.compile(rf"^{escaped_name}\(\d{{8}}\)\.txt$", re.IGNORECASE)
+        for f in os.listdir(SOURCE_DIR):
+            if old_pattern.match(f):
                 old_path = os.path.join(SOURCE_DIR, f)
                 if os.path.exists(old_path):
                     os.remove(old_path)
@@ -159,7 +167,7 @@ def update_law(law_name, old_filenames):
         # Format name for safety: remove newlines and illegal FS characters
         clean_formal = formal_name.replace('\n', ' ').replace('\r', ' ').strip()
         safe_name = re.sub(r'[\\/*?:"<>|]', "", clean_formal)
-        new_filename = f"{safe_name}({ef_yd}).txt"
+        new_filename = f"{safe_name}({lsi_seq})({ef_yd}).txt"
         new_path = os.path.join(SOURCE_DIR, new_filename)
         with open(new_path, 'w', encoding='utf-8') as f:
             f.write(content)

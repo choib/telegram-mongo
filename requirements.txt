@@ -15,4 +15,4 @@ ollama>=0.5.3
 # Development dependencies
 pytest>=8.3.4
 pytest-mock>=3.14.0
-google-generative-language>=0.1.0
+google-generative-language

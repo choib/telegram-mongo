@@ -35,6 +35,11 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER")  # "ollama" or "gemini"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
 
+# Personality Overrides
+ENV_EMBED_PATH = os.getenv("EMBED_PATH")
+ENV_DATABASE = os.getenv("DATABASE")
+ENV_LOCAL_DATA = os.getenv("LOCAL_DATA")
+
 # Personality Registry
 PERSONALITIES = {
     "accounting": {
@@ -82,12 +87,12 @@ if not active_p:
     BOT_PERSONALITY = "accounting"
 
 # Export Active Config
-# PRIORITY: Personality Registry > .env Global Variables
+# PRIORITY: .env Global Variables > Personality Registry
 ROLE = active_p["role"]
 LANGUAGE = active_p["language"]
-EMBED_PATH = active_p["embed_path"]
-DATABASE = active_p["database"]
-LOCAL_DATA = active_p["local_data"]
+EMBED_PATH = ENV_EMBED_PATH or active_p["embed_path"]
+DATABASE = ENV_DATABASE or active_p["database"]
+LOCAL_DATA = ENV_LOCAL_DATA or active_p["local_data"]
 START_MESSAGE = active_p["start_message"]
 UI = active_p["ui"]
 
