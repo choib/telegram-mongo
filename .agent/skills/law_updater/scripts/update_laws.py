@@ -4,6 +4,11 @@ import requests
 import unicodedata
 from xml.etree import ElementTree as ET
 from pdfminer.high_level import extract_text
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.converter import PDFPageAggregator
+from pdfminer.layout import LAParams, LTTextBox, LTTextLine
+from pdfminer.pdfpage import PDFPage
+import io
 import time
 
 # Configuration
@@ -111,15 +116,60 @@ def parse_xml_to_text(xml_content):
     except:
         return None
 
+def extract_text_with_margins(pdf_path, header_margin=775, footer_margin=90):
+    """Extracts text from PDF while ignoring headers and footers based on coordinates."""
+    try:
+        fp = open(pdf_path, 'rb')
+        rsrcmgr = PDFResourceManager()
+        laparams = LAParams()
+        device = PDFPageAggregator(rsrcmgr, laparams=laparams)
+        interpreter = PDFPageInterpreter(rsrcmgr, device)
+        
+        extracted_pages = []
+        for page in PDFPage.get_pages(fp):
+            interpreter.process_page(page)
+            layout = device.get_result()
+            
+            page_text = []
+            # Sort items by vertical position (top to bottom) then horizontal
+            items = []
+            for obj in layout:
+                if isinstance(obj, (LTTextBox, LTTextLine)):
+                    # y0 is bottom, y1 is top.
+                    if obj.bbox[1] > footer_margin and obj.bbox[3] < header_margin:
+                        items.append(obj)
+            
+            # Sort by y1 descending (top to bottom)
+            items.sort(key=lambda x: x.bbox[3], reverse=True)
+            for item in items:
+                page_text.append(item.get_text().strip())
+            
+            extracted_pages.append("\n".join(page_text))
+            
+        fp.close()
+        return "\n\n".join(extracted_pages).strip()
+    except Exception as e:
+        print(f"Error extracting with margins: {e}")
+        return None
+
 def download_pdf_and_convert(lsi_seq, ef_yd):
     try:
+        # Check if we should use coordinate filtering (header/footer removal)
+        # We'll use our new margin-aware function
         data = {'lsiSeq': lsi_seq, 'efYd': ef_yd, 'fileType': 'pdf', 'joAllCheck': 'Y', 'ancYnChk': '0'}
         response = requests.post(PDF_DOWNLOAD_URL, data=data, timeout=20)
         if response.status_code == 200:
             pdf_path = f"temp_{lsi_seq}.pdf"
             with open(pdf_path, 'wb') as f:
                 f.write(response.content)
-            text = extract_text(pdf_path)
+            
+            # Use custom extraction to remove headers/footers
+            text = extract_text_with_margins(pdf_path)
+            
+            # Fallback to standard extraction if custom fails
+            if not text or len(text) < 100:
+                text = extract_text(pdf_path)
+                
             os.remove(pdf_path)
             return text
     except:
