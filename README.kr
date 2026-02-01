@@ -25,7 +25,7 @@ telegram-mongo/
 │   └── ...
 ├── app.py              # 메인 봇 실행 파일
 ├── rag.py              # RAG 관리 CLI
-└── scripts/update_laws.py # 법령 업데이트 엔진
+└── .agent/skills/law_updater/scripts/update_laws.py # 법령 업데이트 엔진
 ```
 
 ## 🛠️ 관리용 CLI
@@ -40,7 +40,7 @@ python3 rag.py --test "헌법이란?"  # 검색 테스트 실행
 ### 법령 저장소 업데이트
 공식 API에서 최신 법령을 가져옵니다:
 ```bash
-python3 scripts/update_laws.py   # scripts/law_names.txt에 명시된 모든 법령 업데이트
+python3 .agent/skills/law_updater/scripts/update_laws.py
 ```
 
 ## 🚀 배포 및 설정
@@ -75,6 +75,27 @@ python3 scripts/update_laws.py   # scripts/law_names.txt에 명시된 모든 법
    ```bash
    python3 app.py
    ```
+
+## 🗄️ 데이터베이스 생성 및 관리
+
+### 1. 법령 저장소 업데이트 (최신 법령 가져오기)
+국가법령정보센터에서 최신 법령 텍스트를 가져오려면:
+1. `.env` 파일의 `LOCAL_DATA` 경로가 올바른지 확인합니다 (예: `./data/korean_law`).
+2. 업데이트 스크립트를 실행합니다:
+   ```bash
+   python3 .agent/skills/law_updater/scripts/update_laws.py
+   ```
+   이 스크립트는 `law_names.txt`에 나열된 법령을 다운로드하여 `LOCAL_DATA` 디렉토리에 저장합니다.
+
+### 2. 벡터 데이터베이스 구축 (인덱싱)
+법령 텍스트가 준비되면 RAG용 벡터 저장소를 구축합니다:
+```bash
+python3 rag.py --rebuild
+```
+이 과정은 다음을 수행합니다:
+- 문맥 인식 법률 분할기(`LegalContextAwareSplitter`)를 사용하여 문서 분할.
+- 임베딩 생성 (`EMBED_PATH`에 지정된 모델 사용).
+- `DATABASE` 경로에 벡터 저장소 저장.
 
 ## 📚 기술 문서
 아키텍처, 기능 구현, 마이그레이션 전략에 대한 자세한 가이드는 `docs/` 디렉토리에서 확인하실 수 있습니다.

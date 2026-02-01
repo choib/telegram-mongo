@@ -25,7 +25,7 @@ telegram-mongo/
 │   └── ...
 ├── app.py              # Main bot entry point
 ├── rag.py              # RAG management CLI
-└── scripts/update_laws.py # Law update engine
+└── .agent/skills/law_updater/scripts/update_laws.py # Law update engine
 ```
 
 ## 🛠️ Management CLI
@@ -40,7 +40,7 @@ python3 rag.py --test "헌법이란?"  # Test retrieval
 ### Law Repository Update
 Fetch latest laws from the official API:
 ```bash
-python3 scripts/update_laws.py   # Update all laws in scripts/law_names.txt
+python3 .agent/skills/law_updater/scripts/update_laws.py
 ```
 
 ## 🚀 Deployment
@@ -75,6 +75,27 @@ The bot requires MongoDB for session persistence.
    ```bash
    python3 app.py
    ```
+
+## 🗄️ Database Creation & Maintenance
+
+### 1. Law Repository (fetching latest laws)
+To fetch the latest law texts from the National Law Information Center:
+1. Ensure your `.env` has `LOCAL_DATA` set (e.g., `./data/korean_law`).
+2. Run the update script:
+   ```bash
+   python3 .agent/skills/law_updater/scripts/update_laws.py
+   ```
+   This will download laws listed in `law_names.txt` and save them to your `LOCAL_DATA` directory.
+
+### 2. Vector Database (indexing)
+Once the law texts are ready, build the vector store for RAG:
+```bash
+python3 rag.py --rebuild
+```
+This process involves:
+- Splitting documents using the `LegalContextAwareSplitter`.
+- Generating embeddings (using the model specified in `EMBED_PATH`).
+- Saving the vector store to the `DATABASE` path.
 
 ## 📚 Technical Documentation
 Detailed guides on architecture, feature implementations, and migration are available in the `docs/` directory.

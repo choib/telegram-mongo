@@ -238,17 +238,22 @@ class LegalVectorStore:
     
     def initialize_from_documents(self, documents: List[Document]):
         """
-        Initialize vector store from processed documents.
+        Initialize vector store from processed documents with granular logging.
         """
         logger.info(f"Creating vector store with {len(documents)} documents")
         
         try:
-            # Process in batches to avoid "Batch size of ... is greater than max batch size of 5461"
-            batch_size = 5000
-            for i in range(0, len(documents), batch_size):
+            # Reduced batch size for better feedback on CPU-only machines
+            batch_size = 1000
+            total_docs = len(documents)
+            
+            for i in range(0, total_docs, batch_size):
                 batch = documents[i : i + batch_size]
-                logger.info(f"Processing batch {i//batch_size + 1}/{(len(documents)-1)//batch_size + 1}")
+                batch_num = i // batch_size + 1
+                total_batches = (total_docs - 1) // batch_size + 1
+                logger.info(f"Processing batch {batch_num}/{total_batches} (Docs {i} to {min(i + batch_size, total_docs)})")
                 
+                # Further sub-batching or just adding progress info if supported
                 if i == 0:
                     self.vector_store = Chroma.from_documents(
                         documents=batch,
@@ -257,6 +262,8 @@ class LegalVectorStore:
                     )
                 else:
                     self.vector_store.add_documents(batch)
+                
+                logger.info(f"Finished batch {batch_num}/{total_batches}")
             
             logger.info("Vector store created successfully")
             

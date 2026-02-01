@@ -10,6 +10,8 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableConfig
 import logging
+import traceback
+import sys
 
 from src.llm_factory import get_llm_client
 from rag import ans_retriever
@@ -249,7 +251,17 @@ class JudgingAgent:
 
             # Step 1c: Use the augmented query to retrieve documents for further analysis
             logger.info(f"JudgingAgent: Analyzing query context using augmented query")
-            context_docs = ans_retriever.invoke(augmented_query)
+            try:
+                context_docs = ans_retriever.invoke(augmented_query)
+                logger.info(f"JudgingAgent: Successfully retrieved {len(context_docs) if context_docs else 0} docs for analysis")
+            except Exception as e_rag:
+                logger.error(f"JudgingAgent: RAG retrieval failed during analysis (Exception): {e_rag}")
+                logger.error(traceback.format_exc())
+                context_docs = []
+            except BaseException as be_rag:
+                logger.error(f"JudgingAgent: RAG retrieval failed during analysis (BaseException): {be_rag}")
+                logger.error(traceback.format_exc())
+                context_docs = []
             
             doc_context = ""
             if context_docs:
@@ -282,6 +294,9 @@ class JudgingAgent:
             except asyncio.TimeoutError:
                 logger.warning("JudgingAgent: Analysis timed out, using original query.")
                 analyzed_query = query
+            except Exception as e_llm:
+                logger.error(f"JudgingAgent: LLM call failed during query clarification: {e_llm}")
+                analyzed_query = query
             
             analyzed_query = analyzed_query.strip()
             logger.info(f"JudgingAgent: Clarified query: '{analyzed_query}'")
@@ -290,12 +305,16 @@ class JudgingAgent:
                 analyzed_query = query
             
             # Step 3: Judge the quality of the augmented query
-            quality_judgment = await self.judge_augmentation_quality(
-                original_query=query,
-                augmented_query=augmented_query,
-                context_docs=context_docs,
-                conversation_context=context
-            )
+            try:
+                quality_judgment = await self.judge_augmentation_quality(
+                    original_query=query,
+                    augmented_query=augmented_query,
+                    context_docs=context_docs,
+                    conversation_context=context
+                )
+            except Exception as e_judge:
+                logger.error(f"JudgingAgent: Quality judgment failed: {e_judge}")
+                quality_judgment = {"score": 50, "reasoning": "Error in quality judgment"}
             
             return {
                 "analyzed_query": analyzed_query,
@@ -303,7 +322,12 @@ class JudgingAgent:
                 "augmentation_quality": quality_judgment
             }
         except Exception as e:
-            logger.error(f"JudgingAgent analysis error: {e}")
+            logger.error(f"JudgingAgent analysis error (Exception): {e}")
+            logger.error(traceback.format_exc())
+            return {"analyzed_query": query, "context_docs": [], "augmentation_quality": {"score": 50, "reasoning": "Error fallback"}}
+        except BaseException as be:
+            logger.error(f"JudgingAgent analysis error (BaseException): {be}")
+            logger.error(traceback.format_exc())
             return {"analyzed_query": query, "context_docs": [], "augmentation_quality": {"score": 50, "reasoning": "Error fallback"}}
     
     async def judge_augmentation_quality(self, original_query: str, augmented_query: str, context_docs: List[Any], conversation_context: str) -> Dict[str, Any]:
