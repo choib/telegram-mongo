@@ -22,6 +22,7 @@ from config import config
 import os
 import re
 import logging
+import shutil
 from typing import List, Optional, Dict, Any
 import asyncio
 
@@ -369,16 +370,48 @@ async def create_context_aware_rag_pipeline(config, force_rebuild: bool = False)
         vector_store.load_existing()
     
     else:
-        logger.info("Building new vector store from documents with context-aware chunking...")
+        logger.info("Building vector store with context-aware chunking...")
         embeddings = HuggingFaceEmbeddings(model_name=config.EMBED_PATH)
+        
+        # Use a temporary directory for the build if it's a rebuild
+        build_dir = config.DATABASE
+        is_shadow_build = False
+        if force_rebuild and vector_store_exists:
+            build_dir = config.DATABASE + ".tmp"
+            is_shadow_build = True
+            logger.info(f"Rebuild requested. Building shadow database in {build_dir}")
+            # Ensure the tmp directory is clean
+            if os.path.exists(build_dir):
+                shutil.rmtree(build_dir)
         
         # Process documents with context-aware splitting
         processor = ContextAwareLegalDocumentProcessor(config, use_context_aware=True)
         documents = await processor.load_and_process_documents()
         
-        # Create vector store
-        vector_store = LegalVectorStore(config, embeddings, config.DATABASE)
+        # Create vector store in the build directory
+        vector_store = LegalVectorStore(config, embeddings, build_dir)
         vector_store.initialize_from_documents(documents)
+        
+        # If we did a shadow build, perform the swap
+        if is_shadow_build:
+            logger.info(f"Rebuild complete. Swapping {build_dir} to {config.DATABASE}")
+            backup_dir = config.DATABASE + ".old"
+            
+            # 1. Move current to backup
+            if os.path.exists(backup_dir):
+                shutil.rmtree(backup_dir)
+            os.rename(config.DATABASE, backup_dir)
+            
+            # 2. Move tmp to current
+            os.rename(build_dir, config.DATABASE)
+            
+            # 3. Cleanup backup
+            shutil.rmtree(backup_dir)
+            logger.info("Swap complete. Old database removed.")
+            
+            # Re-initialize the vector store object to point to the new location (now the same path but refreshed)
+            vector_store = LegalVectorStore(config, embeddings, config.DATABASE)
+            vector_store.load_existing()
     
     # Return configured retrievers
     return (

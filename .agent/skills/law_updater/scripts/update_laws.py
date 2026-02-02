@@ -29,6 +29,7 @@ def extract_law_name(filename):
 
 def get_law_info(law_name):
     try:
+        law_name = unicodedata.normalize('NFC', law_name)
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
@@ -235,7 +236,8 @@ def update_law(law_name, old_filenames):
     return False
 
 def main():
-    if not os.path.exists(SOURCE_DIR): return
+    if not os.path.exists(SOURCE_DIR):
+        os.makedirs(SOURCE_DIR)
     files = [f for f in os.listdir(SOURCE_DIR) if f.endswith('.txt')]
     
     # Group old files by law name
@@ -246,10 +248,8 @@ def main():
             law_to_files[name] = []
         law_to_files[name].append(f)
     
-    # If law_names.txt exists, use it to ensure we hit deleted laws
-    # If law_names.txt exists in the same directory, use it
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    names_file = os.path.join(script_dir, "law_names.txt")
+    # Use law_names.txt from the root directory
+    names_file = "/Users/bo/workspace/telegram-mongo/law_names.txt"
     if os.path.exists(names_file):
         with open(names_file, 'r', encoding='utf-8') as f:
             sorted_names = [line.strip() for line in f if line.strip()]
